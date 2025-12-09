@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Seller Intake • Perfection Deal Engine</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-logo">PRI</div>
+      <div class="brand-text">
+        <span>Perfection REI</span>
+        <span>Sellers</span>
+      </div>
+    </div>
+    <nav class="nav-links">
+      <a href="index.html">Dashboard</a>
+      <a href="sellers.html" class="active">Sellers</a>
+      <a href="buyers.html">Buyers</a>
+      <a href="analyzer.html">Analyzer</a>
+      <a href="loi.html">LOI</a>
+      <a href="instagram.html">Instagram</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="card">
+      <h1>Seller Intake</h1>
+      <p class="sub">
+        Use this while you’re on the phone or in person. Everything is stored locally in your browser.
+      </p>
+
+      <form id="seller-form">
+        <div class="row">
+          <div>
+            <label>Seller Name</label>
+            <input id="seller-name" required />
+          </div>
+          <div>
+            <label>Phone</label>
+            <input id="seller-phone" />
+          </div>
+          <div>
+            <label>Email</label>
+            <input id="seller-email" type="email" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Property Address</label>
+            <input id="seller-address" />
+          </div>
+          <div>
+            <label>City</label>
+            <input id="seller-city" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>State</label>
+            <input id="seller-state" />
+          </div>
+          <div>
+            <label>Zip</label>
+            <input id="seller-zip" />
+          </div>
+          <div>
+            <label>Lead Source</label>
+            <select id="seller-source">
+              <option value="">Select</option>
+              <option>Cold Call</option>
+              <option>Referral</option>
+              <option>Agent</option>
+              <option>Direct Mail</option>
+              <option>Driving for Dollars</option>
+              <option>Online</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label>Notes / Situation</label>
+          <textarea id="seller-notes"
+            placeholder="Motivation, timeline, condition, pain points, anything they share."></textarea>
+        </div>
+
+        <div class="row mt-2">
+          <button type="submit" class="btn btn-primary">Save Seller</button>
+          <button type="button" class="btn btn-ghost" id="export-sellers">Export (JSON)</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card">
+      <span class="badge">Saved Sellers</span>
+      <div id="seller-list" class="list mt-1"></div>
+      <p class="muted mt-1">
+        Stored as <strong>perfection_sellers</strong> in your browser. Clearing browser data will remove them,
+        so export regularly.
+      </p>
+    </section>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "perfection_sellers";
+
+    function loadSellers() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    }
+
+    function saveSellers(list) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    }
+
+    function renderSellers() {
+      const list = loadSellers();
+      const container = document.getElementById("seller-list");
+      container.innerHTML = "";
+
+      if (!list.length) {
+        container.innerHTML = '<p class="muted mt-1">No sellers saved yet.</p>';
+        return;
+      }
+
+      list
+        .slice()
+        .reverse()
+        .forEach((s) => {
+          const div = document.createElement("div");
+          div.className = "list-item";
+          div.innerHTML = `
+            <strong>${s.name || "Unknown seller"}</strong>
+            <span>${s.phone || ""} ${s.email ? " • " + s.email : ""}</span>
+            <span>${s.address || ""}</span>
+            <span>${s.city || ""} ${s.state || ""} ${s.zip || ""}</span>
+            <span>Source: ${s.source || "N/A"} • Saved: ${s.savedAt}</span>
+            <span>${s.notes ? "Notes: " + s.notes : ""}</span>
+          `;
+          container.appendChild(div);
+        });
+    }
+
+    document.getElementById("seller-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const seller = {
+        name: document.getElementById("seller-name").value.trim(),
+        phone: document.getElementById("seller-phone").value.trim(),
+        email: document.getElementById("seller-email").value.trim(),
+        address: document.getElementById("seller-address").value.trim(),
+        city: document.getElementById("seller-city").value.trim(),
+        state: document.getElementById("seller-state").value.trim(),
+        zip: document.getElementById("seller-zip").value.trim(),
+        source: document.getElementById("seller-source").value,
+        notes: document.getElementById("seller-notes").value.trim(),
+        savedAt: new Date().toLocaleString(),
+      };
+
+      const sellers = loadSellers();
+      sellers.push(seller);
+      saveSellers(sellers);
+      renderSellers();
+      e.target.reset();
+      alert("Seller saved.");
+    });
+
+    document.getElementById("export-sellers").addEventListener("click", () => {
+      const sellers = loadSellers();
+      const blob = new Blob([JSON.stringify(sellers, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "perfection-sellers.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    renderSellers();
+  </script>
+</body>
+</html>
