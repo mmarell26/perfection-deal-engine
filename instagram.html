@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Instagram Caption Builder • Perfection REI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-logo">PRI</div>
+      <div class="brand-text">
+        <span>Perfection REI</span>
+        <span>Instagram Caption Builder</span>
+      </div>
+    </div>
+    <nav class="nav-links">
+      <a href="index.html">Dashboard</a>
+      <a href="sellers.html">Sellers</a>
+      <a href="buyers.html">Buyers</a>
+      <a href="analyzer.html">Analyzer</a>
+      <a href="loi.html">LOI</a>
+      <a href="instagram.html" class="active">Instagram</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="card grid grid-2">
+      <div>
+        <h1>PRI Instagram Post Generator</h1>
+        <p class="sub">
+          Turn deals, game, and mindset into clean captions you can paste straight into Instagram.
+        </p>
+
+        <form id="post-form">
+          <div class="row">
+            <div>
+              <label>Post Type</label>
+              <select id="post-type">
+                <option value="listed">Just Listed / New Opportunity</option>
+                <option value="contract">Under Contract</option>
+                <option value="sold">Closed / Sold</option>
+                <option value="educational">Educational / Game</option>
+                <option value="motivation">Mindset / Motivation</option>
+              </select>
+            </div>
+            <div>
+              <label>Tone</label>
+              <select id="tone">
+                <option value="clean">Clean & Professional</option>
+                <option value="hype">Hype & Energetic</option>
+                <option value="mentor">Mentor / Teaching</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label>Headline Hook (optional)</label>
+            <input id="hook" placeholder="TURNKEY 4-UNIT IN NORTH PHILLY 🔑" />
+          </div>
+
+          <div class="row">
+            <div>
+              <label>Property / Topic Title</label>
+              <input id="title" placeholder="4-Unit in 19140 • BRRRR Play" />
+            </div>
+            <div>
+              <label>Price (or Value) $</label>
+              <input id="price" type="number" placeholder="275000" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label>Units / Bed-Bath (optional)</label>
+              <input id="details" placeholder="4 units • 2BR/1BA each" />
+            </div>
+            <div>
+              <label>Area / Zip</label>
+              <input id="area" placeholder="North Philly • 19140" />
+            </div>
+          </div>
+
+          <div>
+            <label>Key Points / Features</label>
+            <textarea id="features" placeholder="- Cash flowing day one
+- Recently renovated
+- Steps from transit"></textarea>
+          </div>
+
+          <div>
+            <label>Call to Action</label>
+            <input id="cta" placeholder="DM 'DEAL' for full breakdown or to get on the buyers list." />
+          </div>
+
+          <div>
+            <label>Custom Hashtags (optional)</label>
+            <input id="custom-tags" placeholder="#PerfectionREI #PRI #PhillyRealEstate" />
+          </div>
+
+          <div class="mt-2">
+            <button type="button" class="btn btn-primary" id="generate">
+              Generate Caption
+            </button>
+            <button type="button" class="btn btn-ghost" id="clear">
+              Clear
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div>
+        <h2>Caption Output</h2>
+        <p class="sub">Copy this straight into Instagram. Edit emojis or lines if you want.</p>
+        <textarea id="output" class="readonly" readonly></textarea>
+        <div class="mt-2">
+          <button class="btn btn-primary" id="copy-btn">Copy to Clipboard</button>
+          <p class="muted mt-1" id="copy-status">Waiting to generate…</p>
+        </div>
+
+        <p class="muted mt-3">
+          Default tags rotate based on post type and always include:
+          #PerfectionREI #PRI #phillyrealestate #realestateinvestor
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    function buildHashtags(type, custom) {
+      const core = [
+        "#PerfectionREI",
+        "#PRI",
+        "#phillyrealestate",
+        "#realestateinvestor",
+      ];
+
+      let extra = [];
+      if (type === "listed" || type === "contract" || type === "sold") {
+        extra = [
+          "#offmarketdeals",
+          "#multifamily",
+          "#cashflow",
+          "#realestateinvesting",
+          "#wholesaling",
+        ];
+      } else if (type === "educational") {
+        extra = [
+          "#realestatetips",
+          "#investorjourney",
+          "#learntoinvest",
+          "#wealthbuilding",
+        ];
+      } else if (type === "motivation") {
+        extra = [
+          "#mindset",
+          "#discipline",
+          "#fatherswholead",
+          "#purpose",
+          "#growthmindset",
+        ];
+      }
+
+      let tags = [...core, ...extra];
+      if (custom && custom.trim() !== "") {
+        const splitCustom = custom
+          .split(/[\s,]+/)
+          .filter(Boolean)
+          .map((t) => (t.startsWith("#") ? t : "#" + t));
+        tags = [...tags, ...splitCustom];
+      }
+
+      tags = [...new Set(tags)];
+      return tags.join(" ");
+    }
+
+    function buildBody(type, tone, title, price, details, area, features, cta) {
+      let intro = "";
+      const priceStr = price ? `$${Number(price).toLocaleString()}` : "";
+
+      if (type === "listed") {
+        intro =
+          (tone === "hype"
+            ? "New opportunity just hit the table.\n\n"
+            : "New deal on the market.\n\n") +
+          `${title || ""}${priceStr ? " • " + priceStr : ""}`;
+      } else if (type === "contract") {
+        intro = `Under contract.\n\n${title || ""}${priceStr ? " • " + priceStr : ""}`;
+      } else if (type === "sold") {
+        intro =
+          (tone === "hype" ? "Another one closed.\n\n" : "Closed.\n\n") +
+          `${title || ""}${priceStr ? " • " + priceStr : ""}`;
+      } else if (type === "educational") {
+        intro =
+          (tone === "mentor"
+            ? "Here’s some game for new and active investors:\n\n"
+            : "Real estate game:\n\n") + (title || "");
+      } else if (type === "motivation") {
+        intro =
+          tone === "mentor"
+            ? title || "You don’t build an empire by accident."
+            : title || "Stay locked in. The work compounds.";
+      }
+
+      let infoLines = [];
+      if (area) infoLines.push(`📍 ${area}`);
+      if (details) infoLines.push(`🏢 ${details}`);
+      if (priceStr && ["listed", "contract", "sold"].includes(type)) {
+        infoLines.push(`💰 ${priceStr}`);
+      }
+
+      const info = infoLines.length ? "\n\n" + infoLines.join("\n") : "";
+
+      let featureBlock = "";
+      if (features && features.trim() !== "") {
+        const lines = features
+          .split("\n")
+          .map((l) => l.trim())
+          .filter(Boolean);
+        if (lines.length) {
+          featureBlock =
+            "\n\nKey points:\n" +
+            lines.map((l) => (l.startsWith("-") ? l : "- " + l)).join("\n");
+        }
+      }
+
+      const ctaBlock = cta && cta.trim() !== "" ? "\n\n" + cta : "";
+
+      if (type === "motivation" && !features.trim()) {
+        return intro + ctaBlock;
+      }
+
+      return intro + info + featureBlock + ctaBlock;
+    }
+
+    document.getElementById("generate").addEventListener("click", () => {
+      const type = document.getElementById("post-type").value;
+      const tone = document.getElementById("tone").value;
+      const hook = document.getElementById("hook").value.trim();
+      const title = document.getElementById("title").value.trim();
+      const price = document.getElementById("price").value.trim();
+      const details = document.getElementById("details").value.trim();
+      const area = document.getElementById("area").value.trim();
+      const features = document.getElementById("features").value;
+      const cta = document.getElementById("cta").value;
+      const customTags = document.getElementById("custom-tags").value;
+
+      const body = buildBody(
+        type,
+        tone,
+        title,
+        price,
+        details,
+        area,
+        features,
+        cta
+      );
+      const tags = buildHashtags(type, customTags);
+      const caption = (hook ? hook + "\n\n" : "") + body + "\n\n" + tags;
+
+      const output = document.getElementById("output");
+      output.value = caption;
+      document.getElementById("copy-status").textContent =
+        "Caption generated. Tap 'Copy to Clipboard'.";
+    });
+
+    document.getElementById("clear").addEventListener("click", () => {
+      document.getElementById("post-form").reset();
+      document.getElementById("output").value = "";
+      document.getElementById("copy-status").textContent =
+        "Cleared. Fill the form and generate again.";
+    });
+
+    document.getElementById("copy-btn").addEventListener("click", async () => {
+      const output = document.getElementById("output").value;
+      if (!output.trim()) {
+        document.getElementById("copy-status").textContent =
+          "Nothing to copy yet. Generate a caption first.";
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(output);
+        document.getElementById("copy-status").textContent =
+          "Copied to clipboard ✅";
+      } catch (e) {
+        document.getElementById("copy-status").textContent =
+          "Copy failed – select and copy manually.";
+      }
+    });
+  </script>
+</body>
+</html>
