@@ -6,7 +6,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
+  <body>
+  <script>
+    (function () {
+      // pages that don't require login
+      const publicPages = ['login.html'];
+      let path = window.location.pathname.split('/').pop();
+      if (path === '' || path === '/') path = 'index.html';
+
+      const isPublic = publicPages.includes(path);
+      const loggedIn = localStorage.getItem('priLoggedIn') === 'true';
+
+      if (!isPublic && !loggedIn) {
+        window.location.href = 'login.html';
+      }
+    })();
+  </script>
+  <!-- existing topbar/header code comes AFTER this -->
   <header class="topbar">
     <div class="brand">
       <div class="brand-logo">PRI</div>
