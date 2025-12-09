@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>LOI Generator • Perfection Deal Engine</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-logo">PRI</div>
+      <div class="brand-text">
+        <span>Perfection REI</span>
+        <span>LOI Generator</span>
+      </div>
+    </div>
+    <nav class="nav-links">
+      <a href="index.html">Dashboard</a>
+      <a href="sellers.html">Sellers</a>
+      <a href="buyers.html">Buyers</a>
+      <a href="analyzer.html">Analyzer</a>
+      <a href="loi.html" class="active">LOI</a>
+      <a href="instagram.html">Instagram</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="card">
+      <h1>Letter of Intent Generator</h1>
+      <p class="sub">
+        Generate a clean LOI you can paste into email, Google Docs, or DocuSign.
+      </p>
+
+      <form id="loi-form">
+        <div class="row">
+          <div>
+            <label>Seller Name</label>
+            <input id="loi-seller-name" />
+          </div>
+          <div>
+            <label>Property Address</label>
+            <input id="loi-address" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Purchase Price Offer $</label>
+            <input id="loi-price" type="number" />
+          </div>
+          <div>
+            <label>Earnest Money Deposit $</label>
+            <input id="loi-emd" type="number" value="1000" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Inspection Period (days)</label>
+            <input id="loi-inspection" type="number" value="10" />
+          </div>
+          <div>
+            <label>Closing Timeline (days)</label>
+            <input id="loi-closing" type="number" value="30" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Buyer Entity</label>
+            <input id="loi-buyer-entity" value="Perfection Real Estate Investors LLC" />
+          </div>
+          <div>
+            <label>Governing Law (State)</label>
+            <input id="loi-state" value="Pennsylvania" />
+          </div>
+        </div>
+
+        <div>
+          <label>Special Terms (optional)</label>
+          <textarea id="loi-terms"
+            placeholder="Assignment clause, access for contractors, subject to clear title, etc."></textarea>
+        </div>
+
+        <div class="row mt-2">
+          <button type="submit" class="btn btn-primary">Generate LOI</button>
+          <button type="button" class="btn btn-ghost" id="copy-loi">Copy to Clipboard</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card">
+      <span class="badge">LOI Output</span>
+      <textarea id="loi-output" class="readonly" readonly></textarea>
+      <p class="muted mt-1">
+        Always have your attorney review your final agreements. This is for speed and structure, not legal advice.
+      </p>
+    </section>
+  </main>
+
+  <script>
+    function buildLOI(data) {
+      const price = data.price ? `$${Number(data.price).toLocaleString()}` : "[price]";
+      const emd = data.emd ? `$${Number(data.emd).toLocaleString()}` : "[amount]`;
+      const today = new Date().toLocaleDateString();
+
+      return `
+${today}
+
+${data.sellerName || "[Seller Name]"}
+Re: Non-Binding Letter of Intent to Purchase
+${data.address || "[Property Address]"}
+
+Dear ${data.sellerName || "Seller"},
+
+Perfection Real Estate Investors LLC ("Buyer") is pleased to submit this non-binding Letter of Intent ("LOI") to purchase the property located at ${data.address ||
+        "[Property Address]"} ("Property") on the following general terms:
+
+1. Purchase Price:
+   Buyer proposes a purchase price of ${price} ("Purchase Price"), subject to verification of all income, expenses, and physical condition of the Property.
+
+2. Earnest Money Deposit:
+   Within three (3) business days of execution of a formal Purchase and Sale Agreement, Buyer shall deposit ${emd} as earnest money, to be held by an agreed-upon escrow agent and applied to the Purchase Price at closing.
+
+3. Inspection & Due Diligence:
+   Buyer shall have ${data.inspectionDays ||
+        10} days from the effective date of the Purchase and Sale Agreement to conduct inspections, review documents, and complete all due diligence. Buyer may cancel the agreement at its sole discretion during this period and receive a full refund of the earnest money deposit.
+
+4. Closing:
+   Closing shall occur on or before ${data.closingDays ||
+        30} days after the conclusion of the inspection period, or at another mutually agreeable date.
+
+5. Closing Costs:
+   Closing costs shall be allocated in a manner customary for transactions of this type in ${data.state ||
+        "[State]"}. Specific allocations will be outlined in the formal Purchase and Sale Agreement.
+
+6. Financing:
+   This offer may be financed through cash, private financing, or institutional lending, at Buyer's discretion.
+
+7. Assignment:
+   Buyer shall have the right to assign its interest in the Purchase and Sale Agreement to another entity or partner controlled by or affiliated with Buyer.
+
+8. Non-Binding:
+   This LOI is intended solely as an expression of interest and a framework for preparing a formal Purchase and Sale Agreement. It is non-binding on both parties except for any provisions that the parties specifically agree shall be binding in writing.
+
+${data.terms ? "Additional Terms:\n" + data.terms + "\n\n" : ""}If these general terms are acceptable, Buyer is prepared to move quickly toward a formal Purchase and Sale Agreement.
+
+Sincerely,
+
+${data.buyerEntity || "Perfection Real Estate Investors LLC"}
+By: ____________________________
+`;
+    }
+
+    document.getElementById("loi-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const data = {
+        sellerName: document.getElementById("loi-seller-name").value.trim(),
+        address: document.getElementById("loi-address").value.trim(),
+        price: document.getElementById("loi-price").value.trim(),
+        emd: document.getElementById("loi-emd").value.trim(),
+        inspectionDays: document.getElementById("loi-inspection").value.trim(),
+        closingDays: document.getElementById("loi-closing").value.trim(),
+        buyerEntity: document.getElementById("loi-buyer-entity").value.trim(),
+        state: document.getElementById("loi-state").value.trim(),
+        terms: document.getElementById("loi-terms").value.trim(),
+      };
+
+      const text = buildLOI(data);
+      document.getElementById("loi-output").value = text;
+    });
+
+    document.getElementById("copy-loi").addEventListener("click", async () => {
+      const text = document.getElementById("loi-output").value;
+      if (!text.trim()) {
+        alert("Generate the LOI first.");
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(text);
+        alert("LOI copied to clipboard.");
+      } catch (e) {
+        alert("Copy failed. You can select and copy manually.");
+      }
+    });
+  </script>
+</body>
+</html>
