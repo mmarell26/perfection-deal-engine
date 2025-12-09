@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Deal Analyzer • Perfection Deal Engine</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-logo">PRI</div>
+      <div class="brand-text">
+        <span>Perfection REI</span>
+        <span>Deal Analyzer</span>
+      </div>
+    </div>
+    <nav class="nav-links">
+      <a href="index.html">Dashboard</a>
+      <a href="sellers.html">Sellers</a>
+      <a href="buyers.html">Buyers</a>
+      <a href="analyzer.html" class="active">Analyzer</a>
+      <a href="loi.html">LOI</a>
+      <a href="instagram.html">Instagram</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="card">
+      <h1>Deal Analyzer</h1>
+      <p class="sub">
+        Plug in ARV, repairs, holding, and your wholesale fee to get a clean MAO.
+        Saved deals are stored locally as <strong>perfection_deals</strong>.
+      </p>
+
+      <div class="grid grid-2">
+        <form id="analyzer-form">
+          <div>
+            <label>Property Address</label>
+            <input id="deal-address" placeholder="1234 N 18th St, Philadelphia PA" />
+          </div>
+
+          <div class="row">
+            <div>
+              <label>After Repair Value (ARV) $</label>
+              <input id="deal-arv" type="number" required />
+            </div>
+            <div>
+              <label>Repair Cost $</label>
+              <input id="deal-repairs" type="number" value="0" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label>Holding / Closing Costs $</label>
+              <input id="deal-holding" type="number" value="0" />
+            </div>
+            <div>
+              <label>Your Wholesale Fee $</label>
+              <input id="deal-fee" type="number" value="10000" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label>Offer Multiplier (default 0.70)</label>
+              <input id="deal-multiplier" type="number" step="0.01" value="0.7" />
+            </div>
+            <div>
+              <label>Status</label>
+              <select id="deal-status">
+                <option>New</option>
+                <option>Analyzed</option>
+                <option>Offer Sent</option>
+                <option>Under Contract</option>
+                <option>Closed</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row mt-2">
+            <button type="submit" class="btn btn-primary">Analyze & Save Deal</button>
+            <button type="button" class="btn btn-ghost" id="clear-analyzer">Clear</button>
+          </div>
+        </form>
+
+        <section>
+          <h2>Analysis Summary</h2>
+          <p class="sub">Use this script when talking to sellers or presenting to buyers.</p>
+          <div id="analysis-output" class="muted mt-2">
+            Enter the numbers on the left to see your MAO and structure here.
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="card">
+      <span class="badge">Saved Deals</span>
+      <div id="deal-list" class="list mt-1"></div>
+      <p class="muted mt-1">
+        Export from here later into Sheets or a CRM. Stored under
+        <strong>perfection_deals</strong>.
+      </p>
+      <button class="btn btn-ghost btn-sm mt-2" id="export-deals">Export Deals (JSON)</button>
+    </section>
+  </main>
+
+  <script>
+    const DEAL_KEY = "perfection_deals";
+
+    function loadDeals() {
+      const raw = localStorage.getItem(DEAL_KEY);
+      return raw ? JSON.parse(raw) : [];
+    }
+
+    function saveDeals(list) {
+      localStorage.setItem(DEAL_KEY, JSON.stringify(list));
+    }
+
+    function formatCurrency(value) {
+      if (value === null || value === undefined || value === "") return "$0";
+      return "$" + Number(value).toLocaleString();
+    }
+
+    function renderAnalysis(arv, repairs, holding, fee, multiplier) {
+      const offerBase = arv * multiplier - repairs - holding - fee;
+      if (isNaN(offerBase)) {
+        document.getElementById("analysis-output").textContent =
+          "Fill out ARV, repairs, holding, and fee to see your MAO.";
+        return { mao: null };
+      }
+      const mao = Math.max(0, Math.round(offerBase));
+
+      const text = `
+Maximum Allowable Offer (MAO): ${formatCurrency(mao)}
+
+Breakdown:
+- ARV: ${formatCurrency(arv)}
+- Multiplier: ${(multiplier * 100).toFixed(0)}%
+- Repairs: ${formatCurrency(repairs)}
+- Holding / Closing: ${formatCurrency(holding)}
+- Your wholesale fee: ${formatCurrency(fee)}
+
+Script:
+"Based on the repairs, holding costs, and where investors need to be on this type of deal,
+our strongest number is around ${formatCurrency(mao)}. If we can make that work, we can move quickly and make this easy for you."
+`.trim();
+
+      document.getElementById("analysis-output").textContent = text;
+      return { mao };
+    }
+
+    function renderDeals() {
+      const deals = loadDeals();
+      const container = document.getElementById("deal-list");
+      container.innerHTML = "";
+
+      if (!deals.length) {
+        container.innerHTML = '<p class="muted mt-1">No deals saved yet.</p>';
+        return;
+      }
+
+      deals
+        .slice()
+        .reverse()
+        .forEach((d) => {
+          const div = document.createElement("div");
+          div.className = "list-item";
+          div.innerHTML = `
+            <strong>${d.address || "Unnamed deal"}</strong>
+            <span>Status: ${d.status || "N/A"} • Saved: ${d.savedAt}</span>
+            <span>ARV: ${formatCurrency(d.arv)} • MAO: ${formatCurrency(d.mao)}</span>
+            <span>Repairs: ${formatCurrency(d.repairs)} • Holding: ${formatCurrency(
+            d.holding
+          )} • Wholesale: ${formatCurrency(d.fee)}</span>
+          `;
+          container.appendChild(div);
+        });
+    }
+
+    document.getElementById("analyzer-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const arv = Number(document.getElementById("deal-arv").value || 0);
+      const repairs = Number(document.getElementById("deal-repairs").value || 0);
+      const holding = Number(document.getElementById("deal-holding").value || 0);
+      const fee = Number(document.getElementById("deal-fee").value || 0);
+      const multiplier = Number(document.getElementById("deal-multiplier").value || 0.7);
+      const address = document.getElementById("deal-address").value.trim();
+      const status = document.getElementById("deal-status").value;
+
+      const { mao } = renderAnalysis(arv, repairs, holding, fee, multiplier);
+
+      const deals = loadDeals();
+      deals.push({
+        address,
+        arv,
+        repairs,
+        holding,
+        fee,
+        multiplier,
+        mao,
+        status,
+        savedAt: new Date().toLocaleString(),
+      });
+      saveDeals(deals);
+      renderDeals();
+      alert("Deal analyzed and saved.");
+    });
+
+    document.getElementById("clear-analyzer").addEventListener("click", () => {
+      document.getElementById("analyzer-form").reset();
+      document.getElementById("analysis-output").textContent =
+        "Enter the numbers on the left to see your MAO and structure here.";
+    });
+
+    document.getElementById("export-deals").addEventListener("click", () => {
+      const deals = loadDeals();
+      const blob = new Blob([JSON.stringify(deals, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "perfection-deals.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    renderDeals();
+  </script>
+</body>
+</html>
